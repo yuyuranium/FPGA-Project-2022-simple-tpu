@@ -1,3 +1,16 @@
+# LSP config
+.cache
+compile_commands.json
+
+# Verilator outputs
+obj_dir
+
+# Waveform files
+*.vcd
+
+# Editor settings
+.vimrc
+
 # Prerequisites
 *.d
 
