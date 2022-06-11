@@ -1,7 +1,7 @@
 `ifndef _DEF_V
 `define _DEF_V
 
-// Common Definitions
+// Common definitions
 `define DATA_WIDTH 16    // A data is a 16-bit fixed-point number
 `define WORD_WIDTH 128   // A word in global buffer has 8 of data
 `define ADDR_WIDTH 12    // Global buffer has 4096 entries
@@ -15,5 +15,8 @@
 `define DATA2 47:32
 `define DATA1 31:16
 `define DATA0 15:0
+
+// Simulation definitions
+`define BUFF_MAX_SIZE 12'h0ff  // Simulate only 256 entries is enough
 
 `endif
