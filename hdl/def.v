@@ -17,6 +17,6 @@
 `define DATA0 15:0
 
 // Simulation definitions
-`define BUFF_MAX_SIZE 12'h0ff  // Simulate only 256 entries is enough
+`define GBUFF_ADDR_BEGIN 12'h00f  // Simulate only 256 entries is enough
 
 `endif
