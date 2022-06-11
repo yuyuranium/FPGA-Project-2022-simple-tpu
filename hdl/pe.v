@@ -36,8 +36,7 @@ module pe (
   wire [`DATA_WIDTH-1:0]   srca_d  = srca_i;
   wire [`DATA_WIDTH-1:0]   srcb_d  = srcb_i;
   wire [`DATA_WIDTH*2-1:0] ab_d    = srca_i * srcb_i;
-  wire [`DATA_WIDTH*2-1:0] psum_d  = ab_q + psum_q;
-
+  wire [`DATA_WIDTH*2-1:0] psum_d  = ab_q + ((clear_q)? 'd0: psum_q);
 
   // Assign ouput signals
   assign clear_o = clear_q;
@@ -48,8 +47,8 @@ module pe (
   // Pipeline propagation of srca and srcb
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      srca_q <= `DATA_WIDTH'd0;
-      srcb_q <= `DATA_WIDTH'd0;
+      srca_q <= 'd0;
+      srcb_q <= 'd0;
     end else begin
       srca_q <= srca_d;
       srcb_q <= srcb_d;
