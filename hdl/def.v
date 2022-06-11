@@ -18,5 +18,6 @@
 
 // Simulation definitions
 `define GBUFF_ADDR_BEGIN 12'hf00  // Simulate only 256 entries (3840~4095)
+`define GBUFF_ADDR_END   12'hfff
 
 `endif
