@@ -14,7 +14,12 @@
 module pe_array(
   input  clk_i,
   input  rst_ni,
+
+  // Control signals from controller
   input  clear_i,
+  output clear_o,
+  input  we_i,
+  output we_o,
 
   // A (word)
   input  [`WORD_WIDTH-1:0] srca_word_i,
@@ -28,32 +33,47 @@ module pe_array(
   output [`WORD_WIDTH-1:0] word_o
 );
 
+  // Wires connecting each pe
   wire clear_q1, clear_q2, clear_q3, clear_q4,
        clear_q5, clear_q6, clear_q7, clear_q8;
-  wire en0 = clear_q1, en1 = clear_q2, en2 = clear_q3, en3 = clear_q4,
-       en4 = clear_q5, en5 = clear_q6, en6 = clear_q7, en7 = clear_q8;
   wire [`DATA_WIDTH-1:0] srcb_q1, srcb_q2, srcb_q3, srcb_q4,
                          srcb_q5, srcb_q6, srcb_q7, srcb_q8;
-  wire [`WORD_WIDTH-1:0] word_d;
-  reg  [`WORD_WIDTH-1:0] word_q;
 
-  // Assign output word and srcb data
-  assign word_o = word_q;
-  assign srcb_o = srcb_q8;
+  // Output word register
+  reg  [`WORD_WIDTH-1:0] word_q;
+  wire [`WORD_WIDTH-1:0] word_d;
 
   // Write enable shift registers
+  reg  [8+`OUTPUT_LAT-1:0] we_q;
+  wire [8+`OUTPUT_LAT-1:0] we_d = { we_q[8+`OUTPUT_LAT-2:0], we_i };  // << 1
+
+  // Assign output signals
+  assign clear_o = clear_q8;  // 8 cycles delay
+  assign we_o    = we_q[8];   // 8 cycles delay
+  assign word_o  = word_q;    // 1 cycle delay
+  assign srcb_o  = srcb_q8;   // 8 cycles delay
+
+  always @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      we_q <= 'd0;
+    end else begin
+      we_q <= we_d;
+    end
+  end
+
+  // Output word control
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       word_q <= 'd0;
     end else begin
-      if (en0) word_q[`DATA0] <= word_d[`DATA0];
-      if (en1) word_q[`DATA1] <= word_d[`DATA1];
-      if (en2) word_q[`DATA2] <= word_d[`DATA2];
-      if (en3) word_q[`DATA3] <= word_d[`DATA3];
-      if (en4) word_q[`DATA4] <= word_d[`DATA4];
-      if (en5) word_q[`DATA5] <= word_d[`DATA5];
-      if (en6) word_q[`DATA6] <= word_d[`DATA6];
-      if (en7) word_q[`DATA7] <= word_d[`DATA7];
+      if (we_q[2]) word_q[`DATA0] <= word_d[`DATA0];
+      if (we_q[3]) word_q[`DATA1] <= word_d[`DATA1];
+      if (we_q[4]) word_q[`DATA2] <= word_d[`DATA2];
+      if (we_q[5]) word_q[`DATA3] <= word_d[`DATA3];
+      if (we_q[6]) word_q[`DATA4] <= word_d[`DATA4];
+      if (we_q[7]) word_q[`DATA5] <= word_d[`DATA5];
+      if (we_q[8]) word_q[`DATA6] <= word_d[`DATA6];
+      if (we_q[9]) word_q[`DATA7] <= word_d[`DATA7];
     end
   end
 
