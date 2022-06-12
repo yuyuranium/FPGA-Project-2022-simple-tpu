@@ -27,7 +27,6 @@ module pe_array(
 
   // B (data)
   input  [`DATA_WIDTH-1:0] srcb_i,
-  output [`DATA_WIDTH-1:0] srcb_o,
 
   // Output word
   output [`WORD_WIDTH-1:0] word_o
@@ -35,9 +34,9 @@ module pe_array(
 
   // Wires connecting each pe
   wire clear_q1, clear_q2, clear_q3, clear_q4,
-       clear_q5, clear_q6, clear_q7, clear_q8;
+       clear_q5, clear_q6, clear_q7;
   wire [`DATA_WIDTH-1:0] srcb_q1, srcb_q2, srcb_q3, srcb_q4,
-                         srcb_q5, srcb_q6, srcb_q7, srcb_q8;
+                         srcb_q5, srcb_q6, srcb_q7;
 
   // Output word register
   reg  [`WORD_WIDTH-1:0] word_q;
@@ -48,10 +47,9 @@ module pe_array(
   wire [8+`OUTPUT_LAT-1:0] we_d = { we_q[8+`OUTPUT_LAT-2:0], we_i };  // << 1
 
   // Assign output signals
-  assign clear_o = clear_q8;  // 8 cycles delay
-  assign we_o    = we_q[8];   // 8 cycles delay
+  assign clear_o = clear_q1;  // 1 cycle delay
+  assign we_o    = we_q[1];   // 1 cycle delay
   assign word_o  = word_q;    // 1 cycle delay
-  assign srcb_o  = srcb_q8;   // 8 cycles delay
 
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -165,11 +163,11 @@ module pe_array(
     .clk_i  (clk_i),
     .rst_ni (rst_ni),
     .clear_i(clear_q7),
-    .clear_o(clear_q8),
+    .clear_o(),
     .srca_i (srca_word_i[`DATA7]),
     .srca_o (srca_word_o[`DATA7]),
     .srcb_i (srcb_q7),
-    .srcb_o (srcb_q8),
+    .srcb_o (),
     .psum_o (word_d[`DATA7])
   );
 
