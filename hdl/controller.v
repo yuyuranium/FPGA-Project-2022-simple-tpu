@@ -55,6 +55,7 @@ module controller (
   output                       wep_o,
   output     [`ADDR_WIDTH-1:0] addrp_o,
 
+  output reg [2:0]             wordp_sel_o,
   output reg [7:0]             data_en_o
 );
 
@@ -122,6 +123,14 @@ module controller (
   assign enp_o   = wr_en;    // Enable when write enable
   assign wep_o   = wr_en;    // Write enable when write enable
   assign addrp_o = addrp_q;
+
+  always @(*) begin
+    if (wr_state_q == `BUSY) begin
+      wordp_sel_o = lat_cnt_q[2:0];
+    end else begin
+      wordp_sel_o = 'o0;
+    end
+  end
 
   always @(*) begin
     case (batch_m)
