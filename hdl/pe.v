@@ -36,13 +36,13 @@ module pe (
   wire [`DATA_WIDTH-1:0]   srca_d  = srca_i;
   wire [`DATA_WIDTH-1:0]   srcb_d  = srcb_i;
   wire [`DATA_WIDTH*2-1:0] ab_d    = srca_i * srcb_i;
-  wire [`DATA_WIDTH*2-1:0] psum_d  = ab_q + ((clear_q)? 'd0: psum_q);
+  wire [`DATA_WIDTH*2-1:0] psum_d  = ab_q + (clear_q ? 'd0 : psum_q);
 
   // Assign ouput signals
   assign clear_o = clear_q;
   assign srca_o  = srca_q;
   assign srcb_o  = srcb_q;
-  assign psum_o  = psum_q[23:8];  // Fraction bits are psum_q[15:0]
+  assign psum_o  = psum_q[8+`DATA_WIDTH-1:8];  // Fraction bits are psum_q[15:0]
 
   // Pipeline propagation of srca and srcb
   always @(posedge clk_i or negedge rst_ni) begin

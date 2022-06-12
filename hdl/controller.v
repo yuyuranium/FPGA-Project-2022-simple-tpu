@@ -62,9 +62,9 @@ module controller (
   reg [1:0] state_q, state_d;
 
   // Boundaries for batches (constant)
-  wire [`ADDR_WIDTH-1:0] n_row_batches  = (m_i + 'h008 - 'h001) >> 3;  // m / 8
-  wire [`ADDR_WIDTH-1:0] n_col_batches  = (n_i + 'h008 - 'h001) >> 3;  // n / 8
-  wire [`ADDR_WIDTH-1:0] n_batch_cycles = (k_i < 'h008)? 'h008 : k_i;  // >= 8
+  wire [`ADDR_WIDTH-1:0] n_row_batches  = m_i + 'h008 - 'h001 >> 3;   // m / 8
+  wire [`ADDR_WIDTH-1:0] n_col_batches  = n_i + 'h008 - 'h001 >> 3;   // n / 8
+  wire [`ADDR_WIDTH-1:0] n_batch_cycles = k_i < 'h008 ? 'h008 : k_i;  // >= 8
 
   // Counters for batches
   reg [`ADDR_WIDTH-1:0] row_batch_q, row_batch_d;
@@ -72,34 +72,36 @@ module controller (
   reg [`ADDR_WIDTH-1:0] batch_cycle_q, batch_cycle_d;
 
   // Global buffer read/write enable
-  wire rd_en = (state_q == `BUSY) &&
+  wire rd_en = state_q == `BUSY &&
     !(row_batch_end && col_batch_end && batch_end);  // Busy and not done yet
-  wire wr_en = (wr_state_q == `BUSY);
+  wire wr_en = wr_state_q == `BUSY;
 
-  // Source Addresses
+  // Source addresses
   wire [`ADDR_WIDTH-1:0] batch_base_addra = row_batch_q * k_i + base_addra_i;
   wire [`ADDR_WIDTH-1:0] batch_base_addrb = col_batch_q * k_i + base_addrb_i;
   reg  [`ADDR_WIDTH-1:0] addra_q, addra_d;
   reg  [`ADDR_WIDTH-1:0] addrb_q, addrb_d;
 
-  // Target Address
-  wire [3:0]             row_lat = `OUTPUT_LAT + batch_m - 4'h1;  // Row latency
-  wire [3:0]             col_lat = batch_n - 4'h1;  // Column latency
-  reg  [1:0]             wr_state_q, wr_state_d;    // Write state
-  reg  [3:0]             lat_cnt_q, lat_cnt_d;      // Latency counter
+  // Target address
   reg  [`ADDR_WIDTH-1:0] addrp_q, addrp_d;
+
+  // Target address generator
+  wire [3:0] row_lat = `OUTPUT_LAT + batch_m - 4'h1;  // Row latency
+  wire [3:0] col_lat = batch_n - 4'h1;                // Column latency
+  reg  [1:0] wr_state_q, wr_state_d;                  // Write state
+  reg  [3:0] lat_cnt_q, lat_cnt_d;                    // Latency counter
 
   // Boundary conditions
   wire row_batch_end = row_batch_q == n_row_batches - 'd1;
   wire col_batch_end = col_batch_q == n_col_batches - 'd1;
   wire batch_end     = batch_cycle_q == n_batch_cycles - 'd1;
 
-  wire [3:0] rem_m   = m_i[3:0] & 4'b0111;       // m % 8
-  wire [3:0] rem_n   = n_i[3:0] & 4'b0111;       // n % 8
-  wire [3:0] batch_m = (!row_batch_end)? 4'h8 :
-                       (~|rem_m)? 4'h8 : rem_m;  // if rem_m == 0 then 8
-  wire [3:0] batch_n = (!col_batch_end)? 4'h8 :
-                       (~|rem_n)? 4'h8 : rem_n;  // if rem_n == 0 then 8
+  wire [3:0] rem_m   = m_i[3:0] & 4'b0111;      // m % 8
+  wire [3:0] rem_n   = n_i[3:0] & 4'b0111;      // n % 8
+  wire [3:0] batch_m = !row_batch_end ? 4'h8 :
+                       ~|rem_m ? 4'h8 : rem_m;  // if rem_m == 0 then 8
+  wire [3:0] batch_n = !col_batch_end ? 4'h8 :
+                       ~|rem_n ? 4'h8 : rem_n;  // if rem_n == 0 then 8
 
   // Assign output signals
   assign valid_o    = state_q == `DONE;
@@ -253,7 +255,7 @@ module controller (
       case (wr_state_q)
         `IDLE: begin
           // When last data is sent, prepare for writing
-          if (pe_we) begin
+          if (pe_we_o) begin
             wr_state_d = `WAIT;
           end else begin
             wr_state_d = `IDLE;
@@ -322,7 +324,7 @@ module controller (
   always @(*) begin
     case (state_q)
       `IDLE: begin
-        state_d = (start_i)? `BUSY : `IDLE;
+        state_d = start_i ? `BUSY : `IDLE;
       end
       `BUSY: begin
         // Until done reading and done writing
@@ -334,7 +336,7 @@ module controller (
       end
       `DONE: begin
         // Wait for start_i being pulled down
-        state_d = (!start_i)? `IDLE : `DONE;
+        state_d = !start_i ? `IDLE : `DONE;
       end
       default: begin
         state_d = `IDLE;
