@@ -14,8 +14,8 @@
 module pe (
   input  clk_i,
   input  rst_ni,
-  input  clear_i,  // Clear signal for accumulated value
-  output clear_o,  // Propagation of the clear signal
+  input  clr_i,  // Clear signal for accumulated value
+  output clr_o,  // Propagation of the clear signal
 
   input  signed [`DATA_WIDTH-1:0] srca_i,
   input  signed [`DATA_WIDTH-1:0] srcb_i,
@@ -26,23 +26,23 @@ module pe (
 );
 
   // Pipeline registers
-  reg                     clear_q;
+  reg                     clr_q;
   reg [`DATA_WIDTH-1:0]   srca_q, srcb_q;
   reg [`DATA_WIDTH*2-1:0] ab_q;
   reg [`DATA_WIDTH*2-1:0] psum_q;
 
   // Input of pipeline registers
-  wire                     clear_d = clear_i;
-  wire [`DATA_WIDTH-1:0]   srca_d  = srca_i;
-  wire [`DATA_WIDTH-1:0]   srcb_d  = srcb_i;
-  wire [`DATA_WIDTH*2-1:0] ab_d    = srca_i * srcb_i;
-  wire [`DATA_WIDTH*2-1:0] psum_d  = ab_q + (clear_q ? 'd0 : psum_q);
+  wire                     clr_d  = clr_i;
+  wire [`DATA_WIDTH-1:0]   srca_d = srca_i;
+  wire [`DATA_WIDTH-1:0]   srcb_d = srcb_i;
+  wire [`DATA_WIDTH*2-1:0] ab_d   = srca_i * srcb_i;
+  wire [`DATA_WIDTH*2-1:0] psum_d = ab_q + (clr_q ? 'd0 : psum_q);
 
   // Assign ouput signals
-  assign clear_o = clear_q;
-  assign srca_o  = srca_q;
-  assign srcb_o  = srcb_q;
-  assign psum_o  = psum_q[8+`DATA_WIDTH-1:8];  // Fraction bits are psum_q[15:0]
+  assign clr_o  = clr_q;
+  assign srca_o = srca_q;
+  assign srcb_o = srcb_q;
+  assign psum_o = psum_q[8+`DATA_WIDTH-1:8];  // Fraction bits are psum_q[15:0]
 
   // Pipeline propagation of srca and srcb
   always @(posedge clk_i or negedge rst_ni) begin
@@ -58,9 +58,9 @@ module pe (
   // Pipeline propagation of clear signal
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      clear_q <= 1'b0;
+      clr_q <= 1'b0;
     end else begin
-      clear_q <= clear_d;
+      clr_q <= clr_d;
     end
   end
 
