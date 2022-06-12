@@ -68,6 +68,12 @@ module controller (
   reg [`ADDR_WIDTH-1:0] col_batch_q, col_batch_d;
   reg [`ADDR_WIDTH-1:0] batch_cycle_q, batch_cycle_d;
 
+  // Source Addresses
+  wire [`ADDR_WIDTH-1:0] batch_base_addra = row_batch_q * k_i + base_addra_i;
+  wire [`ADDR_WIDTH-1:0] batch_base_addrb = col_batch_q * k_i + base_addrb_i;
+  reg  [`ADDR_WIDTH-1:0] addra_q, addra_d;
+  reg  [`ADDR_WIDTH-1:0] addrb_q, addrb_d;
+
   // Boundary conditions
   wire row_batch_end = row_batch_q == n_row_batches - 'd1;
   wire col_batch_end = col_batch_q == n_col_batches - 'd1;
@@ -80,9 +86,6 @@ module controller (
   assign batch_begin_o = batch_begin;
   assign ensys_o       = state_q[0];               // state_q == 2'b01
   assign bubble_o      = batch_cycle_q > k_i - 1;  // insert bubbles when > k
-
-  // Address offsets to each global buffer
-  reg [`ADDR_WIDTH-1:0] offseta, offsetb, offsetp;
 
   // Batch counters
   always @(posedge clk_i or negedge rst_ni) begin
@@ -138,6 +141,27 @@ module controller (
       end
     end else begin
       batch_cycle_d = 'd0;
+    end
+  end
+
+  // Source address generation
+  always @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      addra_q <= 'd0;
+      addrb_q <= 'd0;
+    end else begin
+      addra_q <= addra_d;
+      addrb_q <= addrb_d;
+    end
+  end
+
+  always @(*) begin
+    if (state_q == `BUSY) begin
+      addra_d = batch_base_addra + batch_cycle_d;
+      addra_d = batch_base_addra + batch_cycle_d;
+    end else begin
+      addra_d = 'd0;
+      addra_d = 'd0;
     end
   end
 
