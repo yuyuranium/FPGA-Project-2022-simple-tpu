@@ -56,7 +56,7 @@ module controller (
   output     [`ADDR_WIDTH-1:0] addrp_o,
 
   output reg [2:0]             wordp_sel_o,
-  output reg [7:0]             data_en_o
+  output reg [2:0]             datap_sel_o
 );
 
   // Main state
@@ -124,35 +124,14 @@ module controller (
   assign wep_o   = wr_en;    // Write enable when write enable
   assign addrp_o = addrp_q;
 
+  assign datap_sel_o = rem_m[2:0];
+
   always @(*) begin
     if (wr_state_q == `BUSY) begin
       wordp_sel_o = lat_cnt_q[2:0];
     end else begin
       wordp_sel_o = 'o0;
     end
-  end
-
-  always @(*) begin
-    case (batch_m)
-      4'h1:
-        data_en_o = 8'b00000001;
-      4'h2:
-        data_en_o = 8'b00000011;
-      4'h3:
-        data_en_o = 8'b00000111;
-      4'h4:
-        data_en_o = 8'b00001111;
-      4'h5:
-        data_en_o = 8'b00011111;
-      4'h6:
-        data_en_o = 8'b00111111;
-      4'h7:
-        data_en_o = 8'b01111111;
-      4'h8:
-        data_en_o = 8'b11111111;
-      default:
-        data_en_o = 8'b00000000;
-    endcase
   end
 
   // Batch counters
