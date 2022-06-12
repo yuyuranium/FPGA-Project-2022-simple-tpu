@@ -33,8 +33,8 @@ module controller (
   input  [`ADDR_WIDTH-1:0] base_addrp_i,
 
   // PE control signals
-  output pe_clear,
-  output pe_we,
+  output pe_clear_o,
+  output pe_we_o,
 
   // Systolic input setup interface
   output ensys_o,
@@ -102,11 +102,11 @@ module controller (
                        (~|rem_n)? 4'h8 : rem_n;  // if rem_n == 0 then 8
 
   // Assign output signals
-  assign valid_o  = state_q == `DONE;
-  assign pe_we    = batch_cycle_q == (k_i - 'd1);  // Last data is sent
-  assign pe_clear = ~|batch_cycle_q;               // New batch data is sent
-  assign ensys_o  = rd_en;
-  assign bubble_o = batch_cycle_q > (k_i - 1);     // Insert bubbles when > k
+  assign valid_o    = state_q == `DONE;
+  assign pe_we_o    = batch_cycle_q == (k_i - 'd1);  // Last data is sent
+  assign pe_clear_o = ~|batch_cycle_q;               // New batch data is sent
+  assign ensys_o    = rd_en;
+  assign bubble_o   = batch_cycle_q > (k_i - 1);     // Insert bubbles when > k
 
   // Global buffer interfaces
   assign ena_o   = rd_en;    // Enable when read enable
