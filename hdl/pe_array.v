@@ -66,14 +66,14 @@ module pe_array(
     if (!rst_ni) begin
       word_q <= 'd0;
     end else begin
-      if (we_q[2]) word_q[`DATA0] <= word_d[`DATA0];
-      if (we_q[3]) word_q[`DATA1] <= word_d[`DATA1];
-      if (we_q[4]) word_q[`DATA2] <= word_d[`DATA2];
-      if (we_q[5]) word_q[`DATA3] <= word_d[`DATA3];
-      if (we_q[6]) word_q[`DATA4] <= word_d[`DATA4];
-      if (we_q[7]) word_q[`DATA5] <= word_d[`DATA5];
-      if (we_q[8]) word_q[`DATA6] <= word_d[`DATA6];
-      if (we_q[9]) word_q[`DATA7] <= word_d[`DATA7];
+      if (we_q[`OUTPUT_LAT])   word_q[`DATA0] <= word_d[`DATA0];
+      if (we_q[`OUTPUT_LAT+1]) word_q[`DATA1] <= word_d[`DATA1];
+      if (we_q[`OUTPUT_LAT+2]) word_q[`DATA2] <= word_d[`DATA2];
+      if (we_q[`OUTPUT_LAT+3]) word_q[`DATA3] <= word_d[`DATA3];
+      if (we_q[`OUTPUT_LAT+4]) word_q[`DATA4] <= word_d[`DATA4];
+      if (we_q[`OUTPUT_LAT+5]) word_q[`DATA5] <= word_d[`DATA5];
+      if (we_q[`OUTPUT_LAT+6]) word_q[`DATA6] <= word_d[`DATA6];
+      if (we_q[`OUTPUT_LAT+7]) word_q[`DATA7] <= word_d[`DATA7];
     end
   end
 
