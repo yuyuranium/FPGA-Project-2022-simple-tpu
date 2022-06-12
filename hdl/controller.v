@@ -10,9 +10,9 @@
 
 `include "def.v"
 
-`define IDLE 0
-`define BUSY 1
-`define DONE 2
+`define IDLE 2'b00
+`define BUSY 2'b01
+`define DONE 2'b10
 
 module controller (
   input  clk_i,
@@ -59,16 +59,87 @@ module controller (
   reg [1:0] state_q, state_d;
 
   // Boundaries for batches (constant)
-  wire [`ADDR_WIDTH-1:0] n_row_batches  = (m_i + 'h008 + 'h001) >> 3;
-  wire [`ADDR_WIDTH-1:0] n_col_batches  = (n_i + 'h008 + 'h001) >> 3;
-  wire [`ADDR_WIDTH-1:0] n_batch_cycles = (k_i < 'h008)? 'h008 : k_i;
+  wire [`ADDR_WIDTH-1:0] n_row_batches  = (m_i + 'h008 - 'h001) >> 3;  // m / 8
+  wire [`ADDR_WIDTH-1:0] n_col_batches  = (n_i + 'h008 - 'h001) >> 3;  // n / 8
+  wire [`ADDR_WIDTH-1:0] n_batch_cycles = (k_i < 'h008)? 'h008 : k_i;  // >= 8
 
   // Counters for batches
   reg [`ADDR_WIDTH-1:0] row_batch_q, row_batch_d;
   reg [`ADDR_WIDTH-1:0] col_batch_q, col_batch_d;
+  reg [`ADDR_WIDTH-1:0] batch_cycle_q, batch_cycle_d;
+
+  // Boundary conditions
+  wire row_batch_end = row_batch_q == n_row_batches - 'd1;
+  wire col_batch_end = col_batch_q == n_col_batches - 'd1;
+  wire batch_end     = batch_cycle_q == n_batch_cycles - 'd1;
+  wire batch_begin   = ~|batch_cycle_q;  // == 0
+
+  // Assign output signals
+  assign valid_o       = state_q[1];               // state_q == 2'b10
+  assign batch_end_o   = batch_end;
+  assign batch_begin_o = batch_begin;
+  assign ensys_o       = state_q[0];               // state_q == 2'b01
+  assign bubble_o      = batch_cycle_q > k_i - 1;  // insert bubbles when > k
 
   // Address offsets to each global buffer
   reg [`ADDR_WIDTH-1:0] offseta, offsetb, offsetp;
+
+  // Batch counters
+  always @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      batch_cycle_q <= 'd0;
+      row_batch_q   <= 'd0;
+      col_batch_q   <= 'd0;
+    end else begin
+      batch_cycle_q <= batch_cycle_d;
+      row_batch_q   <= row_batch_d;
+      col_batch_q   <= col_batch_d;
+    end
+  end
+
+  // Row batch counter (slowest)
+  always @(*) begin
+    if (state_q == `BUSY) begin
+      if (row_batch_end && col_batch_end && batch_end) begin
+        row_batch_d = 'd0;                // Reset when all end
+      end else if (col_batch_end && batch_end) begin
+        row_batch_d = row_batch_q + 'd1;  // Increment as col batch ends
+      end else begin
+        row_batch_d = row_batch_q;        // Remain unchanged
+      end
+    end else begin
+      row_batch_d = 'd0;
+    end
+  end
+
+  // Column batch counter (medium)
+  always @(*) begin
+    if (state_q == `BUSY) begin
+      if (col_batch_end && batch_end) begin
+        col_batch_d = 'd0;                // Reset when column batch ends
+      end else if (batch_end) begin
+        col_batch_d = col_batch_q + 'd1;  // Increment as batch ends
+      end else begin
+        col_batch_d = col_batch_q;        // Remain unchanged
+      end
+    end else begin
+      col_batch_d = 'd0;
+    end
+  end
+
+  // Batch cycle counter (fastest)
+  always @(*) begin
+    if (state_q == `BUSY &&
+        !(row_batch_end && col_batch_end && batch_end)) begin
+      if (batch_end) begin
+        batch_cycle_d = 'd0;                  // Reset when ends
+      end else begin
+        batch_cycle_d = batch_cycle_q + 'd1;  // Increment every cycle
+      end
+    end else begin
+      batch_cycle_d = 'd0;
+    end
+  end
 
   // Main state machine behavior
   always @(posedge clk_i or negedge rst_ni) begin
@@ -85,7 +156,11 @@ module controller (
         state_d = (start_i)? `BUSY : `IDLE;
       end
       `BUSY: begin
-        state_d = (start_i)? `DONE : `BUSY;
+        if (row_batch_q == n_row_batches && col_batch_q == n_col_batches) begin
+          state_d = `DONE;
+        end else begin
+          state_d = `BUSY;
+        end
       end
       `DONE: begin
         state_d = (!start_i)? `IDLE : `DONE;
