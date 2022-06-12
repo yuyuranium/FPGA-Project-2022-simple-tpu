@@ -29,7 +29,7 @@ module pe_array(
   input  [`DATA_WIDTH-1:0] srcb_i,
 
   // Output word
-  output [`WORD_WIDTH-1:0] word_o
+  output [`WORD_WIDTH-1:0] wordp_o
 );
 
   // Wires connecting each pe
@@ -39,17 +39,17 @@ module pe_array(
                          srcb_q5, srcb_q6, srcb_q7;
 
   // Output word register
-  reg  [`WORD_WIDTH-1:0] word_q;
-  wire [`WORD_WIDTH-1:0] word_d;
+  reg  [`WORD_WIDTH-1:0] wordp_q;
+  wire [`WORD_WIDTH-1:0] wordp_d;
 
   // Write enable shift registers
   reg  [8+`OUTPUT_LAT-1:0] we_q;
   wire [8+`OUTPUT_LAT-1:0] we_d = { we_q[8+`OUTPUT_LAT-2:0], we_i };  // << 1
 
   // Assign output signals
-  assign clr_o  = clr_q1;   // 1 cycle delay
-  assign we_o   = we_q[1];  // 1 cycle delay
-  assign word_o = word_q;   // 1 cycle delay
+  assign clr_o   = clr_q1;   // 1 cycle delay
+  assign we_o    = we_q[1];  // 1 cycle delay
+  assign wordp_o = wordp_q;  // 1 cycle delay
 
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
@@ -62,16 +62,16 @@ module pe_array(
   // Output word control
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      word_q <= 'd0;
+      wordp_q <= 'd0;
     end else begin
-      if (we_q[`OUTPUT_LAT])   word_q[`DATA0] <= word_d[`DATA0];
-      if (we_q[`OUTPUT_LAT+1]) word_q[`DATA1] <= word_d[`DATA1];
-      if (we_q[`OUTPUT_LAT+2]) word_q[`DATA2] <= word_d[`DATA2];
-      if (we_q[`OUTPUT_LAT+3]) word_q[`DATA3] <= word_d[`DATA3];
-      if (we_q[`OUTPUT_LAT+4]) word_q[`DATA4] <= word_d[`DATA4];
-      if (we_q[`OUTPUT_LAT+5]) word_q[`DATA5] <= word_d[`DATA5];
-      if (we_q[`OUTPUT_LAT+6]) word_q[`DATA6] <= word_d[`DATA6];
-      if (we_q[`OUTPUT_LAT+7]) word_q[`DATA7] <= word_d[`DATA7];
+      if (we_q[`OUTPUT_LAT])   wordp_q[`DATA0] <= wordp_d[`DATA0];
+      if (we_q[`OUTPUT_LAT+1]) wordp_q[`DATA1] <= wordp_d[`DATA1];
+      if (we_q[`OUTPUT_LAT+2]) wordp_q[`DATA2] <= wordp_d[`DATA2];
+      if (we_q[`OUTPUT_LAT+3]) wordp_q[`DATA3] <= wordp_d[`DATA3];
+      if (we_q[`OUTPUT_LAT+4]) wordp_q[`DATA4] <= wordp_d[`DATA4];
+      if (we_q[`OUTPUT_LAT+5]) wordp_q[`DATA5] <= wordp_d[`DATA5];
+      if (we_q[`OUTPUT_LAT+6]) wordp_q[`DATA6] <= wordp_d[`DATA6];
+      if (we_q[`OUTPUT_LAT+7]) wordp_q[`DATA7] <= wordp_d[`DATA7];
     end
   end
 
@@ -84,7 +84,7 @@ module pe_array(
     .srca_o(srca_word_o[`DATA0]),
     .srcb_i(srcb_i),
     .srcb_o(srcb_q1),
-    .psum_o(word_d[`DATA0])
+    .psum_o(wordp_d[`DATA0])
   );
 
   pe pe1 (
@@ -96,7 +96,7 @@ module pe_array(
     .srca_o(srca_word_o[`DATA1]),
     .srcb_i(srcb_q1),
     .srcb_o(srcb_q2),
-    .psum_o(word_d[`DATA1])
+    .psum_o(wordp_d[`DATA1])
   );
 
   pe pe2 (
@@ -108,7 +108,7 @@ module pe_array(
     .srca_o(srca_word_o[`DATA2]),
     .srcb_i(srcb_q2),
     .srcb_o(srcb_q3),
-    .psum_o(word_d[`DATA2])
+    .psum_o(wordp_d[`DATA2])
   );
 
   pe pe3 (
@@ -120,7 +120,7 @@ module pe_array(
     .srca_o(srca_word_o[`DATA3]),
     .srcb_i(srcb_q3),
     .srcb_o(srcb_q4),
-    .psum_o(word_d[`DATA3])
+    .psum_o(wordp_d[`DATA3])
   );
 
   pe pe4 (
@@ -132,7 +132,7 @@ module pe_array(
     .srca_o(srca_word_o[`DATA4]),
     .srcb_i(srcb_q4),
     .srcb_o(srcb_q5),
-    .psum_o(word_d[`DATA4])
+    .psum_o(wordp_d[`DATA4])
   );
 
   pe pe5 (
@@ -144,7 +144,7 @@ module pe_array(
     .srca_o(srca_word_o[`DATA5]),
     .srcb_i(srcb_q5),
     .srcb_o(srcb_q6),
-    .psum_o(word_d[`DATA5])
+    .psum_o(wordp_d[`DATA5])
   );
 
   pe pe6 (
@@ -156,7 +156,7 @@ module pe_array(
     .srca_o(srca_word_o[`DATA6]),
     .srcb_i(srcb_q6),
     .srcb_o(srcb_q7),
-    .psum_o(word_d[`DATA6])
+    .psum_o(wordp_d[`DATA6])
   );
 
   pe pe7 (
@@ -168,7 +168,7 @@ module pe_array(
     .srca_o(srca_word_o[`DATA7]),
     .srcb_i(srcb_q7),
     .srcb_o(),
-    .psum_o(word_d[`DATA7])
+    .psum_o(wordp_d[`DATA7])
   );
 
 endmodule
