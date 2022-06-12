@@ -83,8 +83,10 @@ module controller (
   reg  [`ADDR_WIDTH-1:0] addrb_q, addrb_d;
 
   // Target Address
-  reg  [1:0]             wr_state_q, wr_state_d;  // Write state
-  reg  [3:0]             lat_cnt_q, lat_cnt_d;    // Latency counter
+  wire [3:0]             row_lat = `OUTPUT_LAT + batch_m - 4'h1;  // Row latency
+  wire [3:0]             col_lat = batch_n - 4'h1;  // Column latency
+  reg  [1:0]             wr_state_q, wr_state_d;    // Write state
+  reg  [3:0]             lat_cnt_q, lat_cnt_d;      // Latency counter
   reg  [`ADDR_WIDTH-1:0] addrp_q, addrp_d;
 
   // Boundary conditions
@@ -259,7 +261,7 @@ module controller (
         end
         `WAIT: begin
           // Wait for output latency
-          if (lat_cnt_q == `OUTPUT_LAT + batch_m - 4'h1) begin
+          if (lat_cnt_q == row_lat) begin
             wr_state_d = `BUSY;
           end else begin
             wr_state_d = `WAIT;
@@ -267,7 +269,7 @@ module controller (
         end
         `BUSY: begin
           // Busy lasts batch_n cycles
-          if (lat_cnt_q == batch_n - 4'h1) begin
+          if (lat_cnt_q == col_lat) begin
             wr_state_d = `DONE;
           end else begin
             wr_state_d = `BUSY;
@@ -289,14 +291,14 @@ module controller (
   always @(*) begin
     case (wr_state_q)
       `WAIT: begin
-        if (lat_cnt_q == `OUTPUT_LAT + batch_m - 4'h1) begin
+        if (lat_cnt_q == row_lat) begin
           lat_cnt_d = 'd0;
         end else begin
           lat_cnt_d = lat_cnt_q + 'd1;
         end
       end
       `BUSY: begin
-        if (lat_cnt_q == batch_n - 4'h1) begin
+        if (lat_cnt_q == col_lat) begin
           lat_cnt_d = 'd0;
         end else begin
           lat_cnt_d = lat_cnt_q + 'd1;
@@ -323,13 +325,15 @@ module controller (
         state_d = (start_i)? `BUSY : `IDLE;
       end
       `BUSY: begin
-        if (row_batch_q == n_row_batches && col_batch_q == n_col_batches) begin
+        // Until done reading and done writing
+        if (!rd_en && wr_state_q == `DONE) begin
           state_d = `DONE;
         end else begin
           state_d = `BUSY;
         end
       end
       `DONE: begin
+        // Wait for start_i being pulled down
         state_d = (!start_i)? `IDLE : `DONE;
       end
       default: begin
