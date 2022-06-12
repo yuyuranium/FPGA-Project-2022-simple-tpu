@@ -5,6 +5,7 @@
 `define DATA_WIDTH 16    // A data is a 16-bit fixed-point number
 `define WORD_WIDTH 128   // A word in global buffer has 8 of data
 `define ADDR_WIDTH 12    // Global buffer has 4096 entries
+`define OUTPUT_LAT 2     // Latency to the output when the batch ends
 
 // Data positions in a word (little endian)
 `define DATA7 127:112
