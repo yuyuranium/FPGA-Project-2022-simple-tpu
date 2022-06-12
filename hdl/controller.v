@@ -68,11 +68,19 @@ module controller (
   reg [`ADDR_WIDTH-1:0] col_batch_q, col_batch_d;
   reg [`ADDR_WIDTH-1:0] batch_cycle_q, batch_cycle_d;
 
+  // Global buffer read/write enable
+  wire rd_en = (state_q == `BUSY) &&
+    !(row_batch_end && col_batch_end && batch_end);  // busy and not done yet
+  reg  wr_en_q, wr_en_d;
+
   // Source Addresses
   wire [`ADDR_WIDTH-1:0] batch_base_addra = row_batch_q * k_i + base_addra_i;
   wire [`ADDR_WIDTH-1:0] batch_base_addrb = col_batch_q * k_i + base_addrb_i;
   reg  [`ADDR_WIDTH-1:0] addra_q, addra_d;
   reg  [`ADDR_WIDTH-1:0] addrb_q, addrb_d;
+
+  // Target Address
+  reg  [`ADDR_WIDTH-1:0] addrp_q, addrp_d;
 
   // Boundary conditions
   wire row_batch_end = row_batch_q == n_row_batches - 'd1;
@@ -81,11 +89,23 @@ module controller (
   wire batch_begin   = ~|batch_cycle_q;  // == 0
 
   // Assign output signals
-  assign valid_o       = state_q[1];               // state_q == 2'b10
+  assign valid_o       = state_q == `DONE;
   assign batch_end_o   = batch_end;
   assign batch_begin_o = batch_begin;
-  assign ensys_o       = state_q[0];               // state_q == 2'b01
-  assign bubble_o      = batch_cycle_q > k_i - 1;  // insert bubbles when > k
+  assign ensys_o       = state_q == `BUSY;
+  assign bubble_o      = batch_cycle_q > (k_i - 1);  // insert bubbles when > k
+
+  assign ena_o         = rd_en;    // Enable when read enable
+  assign wea_o         = 1'b0;     // Always read
+  assign addra_o       = addra_q;  
+
+  assign enb_o         = rd_en;    // Enable when read enable 
+  assign web_o         = 1'b0;     // Always read
+  assign addrb_o       = addrb_q;
+
+  assign enp_o         = wr_en_q;  // Enable when write enable
+  assign wep_o         = wr_en_q;  // Write enable when write enable
+  assign addrp_o       = addrp_q;
 
   // Batch counters
   always @(posedge clk_i or negedge rst_ni) begin
