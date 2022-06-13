@@ -19,8 +19,8 @@ module global_buffer (
   input en_i,  // Enable
 
   input      [`ADDR_WIDTH-1:0] addr_i,
-  input      [`WORD_WIDTH-1:0] rdata_i,
-  output reg [`WORD_WIDTH-1:0] wdata_o
+  input      [`WORD_WIDTH-1:0] wdata_i,
+  output reg [`WORD_WIDTH-1:0] rdata_o
 );
 
   // Global buffer
@@ -30,10 +30,10 @@ module global_buffer (
   always @(posedge clk_i) begin
     if (en_i) begin
       if (we_i) begin
-        gbuff[addr_i] <= rdata_i;
-        wdata_o       <= rdata_i;
+        gbuff[addr_i] <= wdata_i;
+        rdata_o       <= wdata_i;
       end else begin
-        wdata_o <= gbuff[addr_i];
+        rdata_o <= gbuff[addr_i];
       end
     end
   end
