@@ -42,7 +42,7 @@ module tpu (
   // Internal controller control signals
   wire       pe_clr, pe_we, ensys, bubble;
   wire [2:0] wordp_sel;
-  wire [2:0] datap_sel;
+  wire [7:0] datap_we;
 
   // Wires connecting each pe array
   wire pe_clr_q1, pe_clr_q2, pe_clr_q3, pe_clr_q4,
@@ -79,16 +79,14 @@ module tpu (
 
   always @(*) begin
     if (wep_o) begin
-      case (datap_sel)
-        3'o1: wordp_o = { 16'd0, 16'd0, 16'd0, 16'd0, 16'd0, 16'd0, 16'd0, wordp[`DATA0] };
-        3'o2: wordp_o = { 16'd0, 16'd0, 16'd0, 16'd0, 16'd0, 16'd0, wordp[`DATA1], wordp[`DATA0] };
-        3'o3: wordp_o = { 16'd0, 16'd0, 16'd0, 16'd0, 16'd0, wordp[`DATA2], wordp[`DATA1], wordp[`DATA0] };
-        3'o4: wordp_o = { 16'd0, 16'd0, 16'd0, 16'd0, wordp[`DATA3], wordp[`DATA2], wordp[`DATA1], wordp[`DATA0] };
-        3'o5: wordp_o = { 16'd0, 16'd0, 16'd0, wordp[`DATA4], wordp[`DATA3], wordp[`DATA2], wordp[`DATA1], wordp[`DATA0] };
-        3'o6: wordp_o = { 16'd0, 16'd0, wordp[`DATA5], wordp[`DATA4], wordp[`DATA3], wordp[`DATA2], wordp[`DATA1], wordp[`DATA0] };
-        3'o7: wordp_o = { 16'd0, wordp[`DATA6], wordp[`DATA5], wordp[`DATA4], wordp[`DATA3], wordp[`DATA2], wordp[`DATA1], wordp[`DATA0] };
-        3'o0: wordp_o = { wordp[`DATA7], wordp[`DATA6], wordp[`DATA5], wordp[`DATA4], wordp[`DATA3], wordp[`DATA2], wordp[`DATA1], wordp[`DATA0] };
-      endcase
+      wordp_o[`DATA0] = datap_we[0] ? wordp[`DATA0] : 'd0;
+      wordp_o[`DATA1] = datap_we[1] ? wordp[`DATA1] : 'd0;
+      wordp_o[`DATA2] = datap_we[2] ? wordp[`DATA2] : 'd0;
+      wordp_o[`DATA3] = datap_we[3] ? wordp[`DATA3] : 'd0;
+      wordp_o[`DATA4] = datap_we[4] ? wordp[`DATA4] : 'd0;
+      wordp_o[`DATA5] = datap_we[5] ? wordp[`DATA5] : 'd0;
+      wordp_o[`DATA6] = datap_we[6] ? wordp[`DATA6] : 'd0;
+      wordp_o[`DATA7] = datap_we[7] ? wordp[`DATA7] : 'd0;
     end else begin
       wordp_o = 'd0;
     end
@@ -131,7 +129,7 @@ module tpu (
     .addrp_o     (addrp_o),
 
     .wordp_sel_o (wordp_sel),
-    .datap_sel_o (datap_sel)
+    .datap_we_o  (datap_we)
   );
 
   systolic_input_setup srca_setup (
