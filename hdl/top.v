@@ -121,4 +121,9 @@ module top (
     .rdata_o()
   );
 
+  initial begin
+    $readmemh("tb/mema.mem", gbuffa.gbuff);
+    $readmemh("tb/memb.mem", gbuffb.gbuff);
+  end
+
 endmodule
