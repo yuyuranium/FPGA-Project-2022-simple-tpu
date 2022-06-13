@@ -73,7 +73,7 @@ module controller (
   reg [`ADDR_WIDTH-1:0] batch_cycle_q, batch_cycle_d;
 
   // Global buffer read/write enable
-  wire rd_en = rd_state_q == `BUSY;
+  wire rd_en = rd_state_q == `BUSY && !bubble_o;
   wire wr_en = wr_state_q == `BUSY;
 
   // Base source addresses
@@ -122,7 +122,7 @@ module controller (
 
   assign enp_o   = wr_en;    // Enable when write enable
   assign wep_o   = wr_en;    // Write enable when write enable
-  assign addrp_o = addrp_q;
+  assign addrp_o = wr_en ? base_addrp_i + addrp_q : 'd0;
 
   always @(*) begin
     if (wr_en) begin
@@ -174,7 +174,7 @@ module controller (
 
   // Row batch counter (slowest)
   always @(*) begin
-    if (state_q == `BUSY) begin
+    if (rd_state_q == `BUSY) begin
       if (row_batch_end && col_batch_end && batch_end) begin
         row_batch_d = 'd0;                // Reset when all end
       end else if (col_batch_end && batch_end) begin
@@ -189,7 +189,7 @@ module controller (
 
   // Column batch counter (medium)
   always @(*) begin
-    if (state_q == `BUSY) begin
+    if (rd_state_q == `BUSY) begin
       if (col_batch_end && batch_end) begin
         col_batch_d = 'd0;                // Reset when column batch ends
       end else if (batch_end) begin
@@ -204,7 +204,7 @@ module controller (
 
   // Batch cycle counter (fastest)
   always @(*) begin
-    if (rd_en) begin                          // when read enable
+    if (rd_state_q == `BUSY) begin            // when read enable
       if (batch_end) begin
         batch_cycle_d = 'd0;                  // Reset when ends
       end else begin
@@ -242,7 +242,7 @@ module controller (
   // Target address generation
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      addrp_q <= base_addrp_i;  // TODO this is incorrect
+      addrp_q <= 'd0;
     end else begin
       addrp_q <= addrp_d;
     end
@@ -251,8 +251,9 @@ module controller (
   always @(*) begin
     if (wr_en) begin
       addrp_d = addrp_q + 'd1;
+    end else begin
+      addrp_d = addrp_q;  // unchanged
     end
-      addrp_d = addrp_q;
   end
 
   // Target address generator state machine behavior
