@@ -73,15 +73,15 @@ module controller (
   reg [`ADDR_WIDTH-1:0] batch_cycle_q, batch_cycle_d;
 
   // Global buffer read/write enable
-  wire rd_en = state_q == `BUSY &&
-    !(row_batch_end && col_batch_end && batch_end);  // Busy and not done yet
+  wire rd_en = rd_state_q == `BUSY;
   wire wr_en = wr_state_q == `BUSY;
 
-  // Source addresses
+  // Base source addresses
   wire [`ADDR_WIDTH-1:0] batch_base_addra = row_batch_q * k_i + base_addra_i;
   wire [`ADDR_WIDTH-1:0] batch_base_addrb = col_batch_q * k_i + base_addrb_i;
-  reg  [`ADDR_WIDTH-1:0] addra_q, addra_d;
-  reg  [`ADDR_WIDTH-1:0] addrb_q, addrb_d;
+
+  // Source address generator
+  reg  [1:0] rd_state_q, rd_state_d;
 
   // Target address
   reg  [`ADDR_WIDTH-1:0] addrp_q, addrp_d;
@@ -114,11 +114,11 @@ module controller (
   // Global buffer interfaces
   assign ena_o   = rd_en;    // Enable when read enable
   assign wea_o   = 1'b0;     // Always read
-  assign addra_o = addra_q;
+  assign addra_o = rd_en ? batch_base_addra + batch_cycle_q : 'd0;
 
   assign enb_o   = rd_en;    // Enable when read enable
   assign web_o   = 1'b0;     // Always read
-  assign addrb_o = addrb_q;
+  assign addrb_o = rd_en ? batch_base_addrb + batch_cycle_q : 'd0;
 
   assign enp_o   = wr_en;    // Enable when write enable
   assign wep_o   = wr_en;    // Write enable when write enable
@@ -215,31 +215,34 @@ module controller (
     end
   end
 
-  // Source address generation
+  // Source address generator state machine behavior
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      addra_q <= 'd0;
-      addrb_q <= 'd0;
+      rd_state_q <= `IDLE;
     end else begin
-      addra_q <= addra_d;
-      addrb_q <= addrb_d;
+      rd_state_q <= rd_state_d;
     end
   end
 
   always @(*) begin
-    if (rd_en) begin
-      addra_d = batch_base_addra + batch_cycle_d;
-      addrb_d = batch_base_addrb + batch_cycle_d;
-    end else begin
-      addra_d = 'd0;
-      addrb_d = 'd0;
-    end
+    case (rd_state_q)
+      `IDLE:
+        rd_state_d = state_q == `BUSY ? `BUSY : `IDLE;
+      `BUSY:
+        rd_state_d =
+          row_batch_end && col_batch_end && batch_end ? `DONE : `BUSY;
+      `DONE:
+        rd_state_d = state_q == `DONE ? `IDLE : `DONE;
+      default: begin
+        rd_state_d = `IDLE;
+      end
+    endcase
   end
 
   // Target address generation
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      addrp_q <= base_addrp_i;
+      addrp_q <= base_addrp_i;  // TODO this is incorrect
     end else begin
       addrp_q <= addrp_d;
     end
@@ -341,7 +344,7 @@ module controller (
       end
       `BUSY: begin
         // Until done reading and done writing
-        if (!rd_en && wr_state_q == `DONE) begin
+        if (rd_state_q == `DONE && wr_state_q == `DONE) begin
           state_d = `DONE;
         end else begin
           state_d = `BUSY;
