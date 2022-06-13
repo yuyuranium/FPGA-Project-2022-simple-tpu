@@ -1,3 +1,6 @@
+# Memory
+*.mem
+
 # LSP config
 .nvim
 .cache
