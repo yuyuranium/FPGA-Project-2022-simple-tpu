@@ -4,7 +4,7 @@
 #include <verilated_vcd_c.h>
 #include <random>
 #include <fstream>
-#include <boost/format.hpp>
+#include <iomanip>
 #include "Vtop.h"
 
 using namespace std;
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     matrix_a[i] = vector<short>(k);
     for (int j = 0; j < k; ++j) {
       matrix_a[i][j] = rand() & 0x0f;  // 0 ~ 15 for testing
-      cout << boost::format(" %3d") % matrix_a[i][j];
+      cout << setw(4) << matrix_a[i][j];
     }
     cout << endl;
   }
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
     matrix_b[i] = vector<short>(n);
     for (int j = 0; j < n; ++j) {
       matrix_b[i][j] = rand() & 0x0f;  // 0 ~ 15 for testing
-      cout << boost::format(" %3d") % matrix_b[i][j];
+      cout << setw(4) << matrix_b[i][j];
     }
     cout << endl;
   }
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
         if (l >= m) {
           mema << "0000";
         } else {
-          mema << boost::format("%04x") % matrix_a[l][j];
+          mema << setfill('0') << setw(4) << hex << matrix_a[l][j];
         }
       }
       mema << "\n";
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
         if (l >= n) {
           memb << "0000";
         } else {
-          memb << boost::format("%04x") % matrix_b[i][l];
+          memb << setfill('0') << setw(4) << hex << matrix_b[i][l];
         }
       }
       memb << "\n";
