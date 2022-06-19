@@ -71,6 +71,7 @@ module tpu (
         3'o5: wordp = wordp5;
         3'o6: wordp = wordp6;
         3'o7: wordp = wordp7;
+        default: wordp = 'd0;
       endcase
     end else begin
       wordp = 'd0;
