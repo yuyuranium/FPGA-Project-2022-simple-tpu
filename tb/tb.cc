@@ -23,15 +23,16 @@ int main(int argc, char *argv[])
   top->trace(tfp, 5);
   tfp->open("top.vcd");
 
-  const int m = 9, k = 8, n = 9;
+  const int m = 10, k = 8, n = 10;
   vector<vector<short> > matrix_a(m);
   vector<vector<short> > matrix_b(k);
+  vector<vector<short> > matrix_p(m);
 
   cout << "A matrix:" << endl;
   for (int i = 0; i < m; ++i) {
     matrix_a[i] = vector<short>(k);
     for (int j = 0; j < k; ++j) {
-      matrix_a[i][j] = rand() & 0x0f;  // 0 ~ 15 for testing
+      matrix_a[i][j] = rand() & 0xff;  // 0 ~ 15 for testing
       cout << setw(4) << matrix_a[i][j];
     }
     cout << endl;
@@ -42,12 +43,43 @@ int main(int argc, char *argv[])
   for (int i = 0; i < k; ++i) {
     matrix_b[i] = vector<short>(n);
     for (int j = 0; j < n; ++j) {
-      matrix_b[i][j] = rand() & 0x0f;  // 0 ~ 15 for testing
+      matrix_b[i][j] = rand() & 0xff;  // 0 ~ 15 for testing
       cout << setw(4) << matrix_b[i][j];
     }
     cout << endl;
   }
   cout << endl;
+
+  cout << "P matrix:" << endl;
+  for (int i = 0; i < m; ++i) {
+    matrix_p[i] = vector<short>(n);
+    for (int j = 0; j < n; ++j) {
+      int psum = 0;
+      for (int l = 0; l < k; ++l) {
+        psum += matrix_a[i][l] * matrix_b[l][j];
+      }
+      matrix_p[i][j] = psum >> 8;
+      cout << setw(4) << matrix_p[i][j];
+    }
+    cout << endl;
+  }
+  cout << endl;
+
+  cout << "P memory:" << endl;
+  // Print matrix P memory content
+  for (int i = 0; i < m; i += 8) {
+    for (int j = 0; j < k; ++j) {
+      cout << " ";
+      for (int l = i + 7; l >= i; --l) {
+        if (l >= m) {
+          cout << "0000";
+        } else {
+          cout << setfill('0') << setw(4) << hex << matrix_p[l][j];
+        }
+      }
+      cout << endl;
+    }
+  }
 
   // Write matrix A to mema.txt
   ofstream mema("tb/mema.mem");
