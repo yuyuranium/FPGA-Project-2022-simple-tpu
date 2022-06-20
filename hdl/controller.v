@@ -258,7 +258,7 @@ module controller (
 
   always @(*) begin
     if (state_q == `BUSY) begin
-      if (col_lat_cnt_q == batch_n) begin
+      if (wr_state_q == `BUSY && col_lat_cnt_q == batch_n) begin
         if (wr_col_batch_q == n_col_batches - 1) begin
           wr_col_batch_d = 'd0;
         end else begin
