@@ -13,7 +13,6 @@
 `define IDLE 2'b00
 `define BUSY 2'b01
 `define DONE 2'b10
-`define WAIT 2'b11
 
 module controller (
   input  clk_i,
@@ -41,22 +40,21 @@ module controller (
   output bubble_o,
 
   // Global buffer A interface
-  output                       ena_o,
-  output                       wea_o,
-  output     [`ADDR_WIDTH-1:0] addra_o,
+  output                   ena_o,
+  output                   wea_o,
+  output [`ADDR_WIDTH-1:0] addra_o,
 
   // Global buffer B interface
-  output                       enb_o,
-  output                       web_o,
-  output     [`ADDR_WIDTH-1:0] addrb_o,
+  output                   enb_o,
+  output                   web_o,
+  output [`ADDR_WIDTH-1:0] addrb_o,
 
   // Global buffer P interface
-  output                       enp_o,
-  output                       wep_o,
-  output     [`ADDR_WIDTH-1:0] addrp_o,
+  output                   enp_o,
+  output                   wep_o,
+  output [`ADDR_WIDTH-1:0] addrp_o,
 
-  output reg [2:0]             wordp_sel_o,
-  output reg [7:0]             datap_we_o
+  output [2:0]             wordp_sel_o
 );
 
   // Main state
@@ -71,91 +69,87 @@ module controller (
   reg [`ADDR_WIDTH-1:0] row_batch_q, row_batch_d;
   reg [`ADDR_WIDTH-1:0] col_batch_q, col_batch_d;
   reg [`ADDR_WIDTH-1:0] batch_cycle_q, batch_cycle_d;
+  reg [`ADDR_WIDTH-1:0] wr_col_batch_q, wr_col_batch_d;
 
   // Global buffer read/write enable
-  wire rd_en = state_q == `BUSY &&
-    !(row_batch_end && col_batch_end && batch_end);  // Busy and not done yet
+  wire rd_en = rd_state_q == `BUSY && !bubble_d;
   wire wr_en = wr_state_q == `BUSY;
 
-  // Source addresses
+  // Base source addresses
   wire [`ADDR_WIDTH-1:0] batch_base_addra = row_batch_q * k_i + base_addra_i;
   wire [`ADDR_WIDTH-1:0] batch_base_addrb = col_batch_q * k_i + base_addrb_i;
-  reg  [`ADDR_WIDTH-1:0] addra_q, addra_d;
-  reg  [`ADDR_WIDTH-1:0] addrb_q, addrb_d;
 
-  // Target address
-  reg  [`ADDR_WIDTH-1:0] addrp_q, addrp_d;
+  // Source address generator
+  reg  [1:0] rd_state_q, rd_state_d;
 
   // Target address generator
-  wire [3:0] row_lat = `OUTPUT_LAT + batch_m - 4'h1;  // Row latency
-  wire [3:0] col_lat = batch_n - 4'h1;                // Column latency
-  reg  [1:0] wr_state_q, wr_state_d;                  // Write state
-  reg  [3:0] lat_cnt_q, lat_cnt_d;                    // Latency counter
+  reg  [1:0] wr_state_q, wr_state_d;
+  reg  [2:0] col_lat_cnt_q, col_lat_cnt_d;
+
+  reg  [8+`OUTPUT_LAT-1:0] row_lat_shift_reg_q;
+  reg  [`ADDR_WIDTH-1:0]   addrp_q, addrp_d;
+
+  wire wr_start = row_lat_shift_reg_q[7+`OUTPUT_LAT];
 
   // Boundary conditions
-  wire row_batch_end = row_batch_q == n_row_batches - 'd1;
-  wire col_batch_end = col_batch_q == n_col_batches - 'd1;
-  wire batch_end     = batch_cycle_q == n_batch_cycles - 'd1;
+  wire row_batch_end    = row_batch_q == n_row_batches - 'd1;
+  wire col_batch_end    = col_batch_q == n_col_batches - 'd1;
+  wire batch_end        = batch_cycle_q == n_batch_cycles - 'd1;
+  wire wr_col_batch_end = wr_col_batch_q == n_col_batches - 'd1;
 
-  wire [3:0] rem_m   = m_i[3:0] & 4'b0111;      // m % 8
-  wire [3:0] rem_n   = n_i[3:0] & 4'b0111;      // n % 8
-  wire [3:0] batch_m = !row_batch_end ? 4'h8 :
-                       ~|rem_m ? 4'h8 : rem_m;  // if rem_m == 0 then 8
-  wire [3:0] batch_n = !col_batch_end ? 4'h8 :
-                       ~|rem_n ? 4'h8 : rem_n;  // if rem_n == 0 then 8
+  // Write boundary condition
+  wire [2:0] rem_n   = n_i[2:0] & 3'b111;  // n % 8
+  wire [2:0] batch_n = wr_col_batch_end ? rem_n - 3'd1 : 3'd7; 
+
+  // PE & systolic input setup control signals
+  reg  pe_clr_q, pe_we_q, ensys_q, bubble_q;
+  wire pe_clr_d = ~|batch_cycle_q;               // == 0
+  wire pe_we_d  = rd_state_q == `BUSY && batch_cycle_d == (k_i - 'd1);
+  wire ensys_d  = state_q == `BUSY;
+  wire bubble_d = batch_cycle_q > (k_i - 1);     // Insert bubbles when > k
 
   // Assign output signals
   assign valid_o  = state_q == `DONE;
-  assign pe_we_o  = batch_cycle_q == (k_i - 'd1);  // Last data is sent
-  assign pe_clr_o = ~|batch_cycle_q;               // New batch data is sent
-  assign ensys_o  = rd_en;
-  assign bubble_o = batch_cycle_q > (k_i - 1);     // Insert bubbles when > k
+  assign pe_we_o  = pe_we_q;
+  assign pe_clr_o = pe_clr_q;
+  assign ensys_o  = ensys_q;
+  assign bubble_o = bubble_q;
 
   // Global buffer interfaces
   assign ena_o   = rd_en;    // Enable when read enable
   assign wea_o   = 1'b0;     // Always read
-  assign addra_o = addra_q;
+  assign addra_o = rd_en ? batch_base_addra + batch_cycle_q : 'd0;
 
   assign enb_o   = rd_en;    // Enable when read enable
   assign web_o   = 1'b0;     // Always read
-  assign addrb_o = addrb_q;
+  assign addrb_o = rd_en ? batch_base_addrb + batch_cycle_q : 'd0;
 
   assign enp_o   = wr_en;    // Enable when write enable
   assign wep_o   = wr_en;    // Write enable when write enable
-  assign addrp_o = addrp_q;
+  assign addrp_o = wr_en ? base_addrp_i + addrp_q : 'd0;
 
-  always @(*) begin
-    if (wr_en) begin
-      case (batch_m)
-        4'h1:
-          datap_we_o = 8'b00000001;
-        4'h2:
-          datap_we_o = 8'b00000011;
-        4'h3:
-          datap_we_o = 8'b00000111;
-        4'h4:
-          datap_we_o = 8'b00001111;
-        4'h5:
-          datap_we_o = 8'b00011111;
-        4'h6:
-          datap_we_o = 8'b00111111;
-        4'h7:
-          datap_we_o = 8'b01111111;
-        4'h8:
-          datap_we_o = 8'b11111111;
-        default:
-          datap_we_o = 8'b00000000;
-      endcase
-    end else begin
-      datap_we_o = 8'b00000000;
-    end
-  end
+  // Word P select signal
+  assign wordp_sel_o = wr_en ? col_lat_cnt_q : 'o0;
 
-  always @(*) begin
-    if (wr_en) begin
-      wordp_sel_o = lat_cnt_q[2:0];
+  // PE & systolic input setup control signals
+  always @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      pe_clr_q <= 1'b0;
+      pe_we_q  <= 1'b0;
+      ensys_q  <= 1'b0;
+      bubble_q <= 1'b0;
     end else begin
-      wordp_sel_o = 'o0;
+      if (state_q == `BUSY) begin
+        pe_clr_q <= pe_clr_d;
+        pe_we_q  <= pe_we_d;
+        ensys_q  <= ensys_d;
+        bubble_q <= bubble_d;
+      end else begin
+        pe_clr_q <= 'd0;
+        pe_we_q  <= 'd0;
+        ensys_q  <= 'd0;
+        bubble_q <= 'd0;
+      end
     end
   end
 
@@ -174,7 +168,9 @@ module controller (
 
   // Row batch counter (slowest)
   always @(*) begin
-    if (state_q == `BUSY) begin
+    if (rd_state_q == `IDLE) begin
+      row_batch_d = 'd0;
+    end else if (rd_state_q == `BUSY) begin
       if (row_batch_end && col_batch_end && batch_end) begin
         row_batch_d = 'd0;                // Reset when all end
       end else if (col_batch_end && batch_end) begin
@@ -183,13 +179,15 @@ module controller (
         row_batch_d = row_batch_q;        // Remain unchanged
       end
     end else begin
-      row_batch_d = 'd0;
+      row_batch_d = row_batch_q;
     end
   end
 
   // Column batch counter (medium)
   always @(*) begin
-    if (state_q == `BUSY) begin
+    if (rd_state_q == `IDLE) begin
+      col_batch_d = 'd0;
+    end else if (rd_state_q == `BUSY) begin
       if (col_batch_end && batch_end) begin
         col_batch_d = 'd0;                // Reset when column batch ends
       end else if (batch_end) begin
@@ -198,13 +196,13 @@ module controller (
         col_batch_d = col_batch_q;        // Remain unchanged
       end
     end else begin
-      col_batch_d = 'd0;
+      col_batch_d = col_batch_q;
     end
   end
 
   // Batch cycle counter (fastest)
   always @(*) begin
-    if (rd_en) begin                          // when read enable
+    if (rd_state_q == `BUSY) begin            // when read enable
       if (batch_end) begin
         batch_cycle_d = 'd0;                  // Reset when ends
       end else begin
@@ -215,51 +213,71 @@ module controller (
     end
   end
 
-  // Source address generation
+  // Source address generator state machine behavior
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      addra_q <= 'd0;
-      addrb_q <= 'd0;
+      rd_state_q <= `IDLE;
     end else begin
-      addra_q <= addra_d;
-      addrb_q <= addrb_d;
+      rd_state_q <= rd_state_d;
     end
   end
 
   always @(*) begin
-    if (rd_en) begin
-      addra_d = batch_base_addra + batch_cycle_d;
-      addrb_d = batch_base_addrb + batch_cycle_d;
+    case (rd_state_q)
+      `IDLE:
+        rd_state_d = state_q == `BUSY ? `BUSY : `IDLE;
+      `BUSY:
+        rd_state_d =
+          row_batch_end && col_batch_end && batch_end ? `DONE : `BUSY;
+      `DONE:
+        rd_state_d = state_q == `DONE ? `IDLE : `DONE;
+      default: begin
+        rd_state_d = `IDLE;
+      end
+    endcase
+  end
+
+  // Row latency shift register
+  always @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      row_lat_shift_reg_q <= 'd0;
     end else begin
-      addra_d = 'd0;
-      addrb_d = 'd0;
+      row_lat_shift_reg_q <=
+        { row_lat_shift_reg_q[8+`OUTPUT_LAT-2:0], pe_we_q };
     end
   end
 
   // Target address generation
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      addrp_q <= base_addrp_i;
+      wr_col_batch_q <= 'd0;
     end else begin
-      addrp_q <= addrp_d;
+      wr_col_batch_q <= wr_col_batch_d;
     end
   end
 
   always @(*) begin
-    if (wr_en) begin
-      addrp_d = addrp_q + 'd1;
+    if (state_q == `BUSY) begin
+      if (col_lat_cnt_q == batch_n) begin
+        if (wr_col_batch_q == n_col_batches - 1) begin
+          wr_col_batch_d = 'd0;
+        end else begin
+          wr_col_batch_d = wr_col_batch_q + 'd1;
+        end
+      end else begin
+        wr_col_batch_d = wr_col_batch_q;
+      end
+    end else begin
+      wr_col_batch_d = 'd0;
     end
-      addrp_d = addrp_q;
   end
 
   // Target address generator state machine behavior
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
       wr_state_q <= `IDLE;
-      lat_cnt_q  <= 'd0;
     end else begin
       wr_state_q <= wr_state_d;
-      lat_cnt_q  <= lat_cnt_d;
     end
   end
 
@@ -267,32 +285,27 @@ module controller (
     if (state_q == `BUSY) begin
       case (wr_state_q)
         `IDLE: begin
-          // When last data is sent, prepare for writing
-          if (pe_we_o) begin
-            wr_state_d = `WAIT;
-          end else begin
-            wr_state_d = `IDLE;
-          end
-        end
-        `WAIT: begin
-          // Wait for output latency
-          if (lat_cnt_q == row_lat) begin
-            wr_state_d = `BUSY;
-          end else begin
-            wr_state_d = `WAIT;
-          end
+          wr_state_d = wr_start ? `BUSY : `IDLE;
         end
         `BUSY: begin
-          // Busy lasts batch_n cycles
-          if (lat_cnt_q == col_lat) begin
-            wr_state_d = `DONE;
+          if (wr_start) begin
+            wr_state_d = `BUSY;
+          end else if (col_lat_cnt_q == batch_n) begin
+            if (rd_state_q == `DONE && ~|row_lat_shift_reg_q) begin
+              wr_state_d = `DONE;
+            end else begin
+              wr_state_d = `IDLE;
+            end
           end else begin
             wr_state_d = `BUSY;
           end
         end
         `DONE: begin
-          // Lasts 1 cycle
-          wr_state_d = `IDLE;
+          if (|row_lat_shift_reg_q) begin
+            wr_state_d = `IDLE;
+          end else begin
+            wr_state_d = state_q == `DONE ? `IDLE : `DONE;
+          end
         end
         default: begin
           wr_state_d = `IDLE;
@@ -303,26 +316,58 @@ module controller (
     end
   end
 
+  always @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      col_lat_cnt_q <= 'd0;
+    end else begin
+      col_lat_cnt_q <= col_lat_cnt_d;
+    end
+  end
+
   always @(*) begin
-    case (wr_state_q)
-      `WAIT: begin
-        if (lat_cnt_q == row_lat) begin
-          lat_cnt_d = 'd0;
-        end else begin
-          lat_cnt_d = lat_cnt_q + 'd1;
+    if (state_q == `BUSY) begin
+      case (wr_state_q)
+        `IDLE: begin
+          col_lat_cnt_d = 'd0;
         end
-      end
-      `BUSY: begin
-        if (lat_cnt_q == col_lat) begin
-          lat_cnt_d = 'd0;
-        end else begin
-          lat_cnt_d = lat_cnt_q + 'd1;
+        `BUSY: begin
+          if (row_lat_shift_reg_q[7+`OUTPUT_LAT]) begin
+            col_lat_cnt_d = 'd0;
+          end else if (col_lat_cnt_q == batch_n) begin
+            col_lat_cnt_d = 'd0;
+          end else begin
+            col_lat_cnt_d = col_lat_cnt_q + 'd1;
+          end
         end
-      end
-      default: begin
-        lat_cnt_d = 'd0;
-      end
-    endcase
+        `DONE: begin
+          col_lat_cnt_d = 'd0;
+        end
+        default: begin
+          col_lat_cnt_d = 'd0;
+        end
+      endcase
+    end else begin
+      col_lat_cnt_d = 'd0;
+    end
+  end
+
+  // Target address generation
+  always @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      addrp_q <= 'd0;
+    end else begin
+      addrp_q <= addrp_d;
+    end
+  end
+
+  always @(*) begin
+    if (state_q == `IDLE) begin
+      addrp_d = 'd0;
+    end else if (wr_en) begin
+      addrp_d = addrp_q + 'd1;
+    end else begin
+      addrp_d = addrp_q;  // unchanged
+    end
   end
 
   // Main state machine behavior
@@ -341,7 +386,7 @@ module controller (
       end
       `BUSY: begin
         // Until done reading and done writing
-        if (!rd_en && wr_state_q == `DONE) begin
+        if (rd_state_q == `DONE && wr_state_q == `DONE) begin
           state_d = `DONE;
         end else begin
           state_d = `BUSY;

@@ -1,4 +1,8 @@
+# Memory
+*.mem
+
 # LSP config
+.nvim
 .cache
 compile_commands.json
 
