@@ -3,10 +3,10 @@
 <!--                                                         -->
 <!-- Copyright 1986-2020 Xilinx, Inc. All Rights Reserved.   -->
 
-<Project Version="7" Minor="54" Path="C:/Users/user/Desktop/FPGA/term_project/FPGA-Project-2022-simple-tpu/global_buffer/global_buffer.xpr">
+<Project Version="7" Minor="54" Path="C:/Users/user/Desktop/FPGA/term_project/FPGA-Project-2022-simple-tpu/ip_repo/global_buffer/global_buffer.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
-    <Option Name="Id" Val="d3904b1cf43646cbb727cbdd6944bb44"/>
+    <Option Name="Id" Val="e4102e01acc846bf81996f4fdfa4a297"/>
     <Option Name="Part" Val="xc7z020clg400-1"/>
     <Option Name="CompiledLibDir" Val="$PCACHEDIR/compile_simlib"/>
     <Option Name="CompiledLibDirXSim" Val=""/>
@@ -76,7 +76,7 @@
       <Filter Type="Srcs"/>
       <File Path="$PSRCDIR/sources_1/imports/hdl/def.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../hdl/def.v"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../hdl/def.v"/>
           <Attr Name="ImportTime" Val="1655710941"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
@@ -85,8 +85,8 @@
       </File>
       <File Path="$PSRCDIR/sources_1/imports/hdl/global_buffer.v">
         <FileInfo>
-          <Attr Name="ImportPath" Val="$PPRDIR/../hdl/global_buffer.v"/>
-          <Attr Name="ImportTime" Val="1655709561"/>
+          <Attr Name="ImportPath" Val="$PPRDIR/../../hdl/global_buffer.v"/>
+          <Attr Name="ImportTime" Val="1655727028"/>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -149,14 +149,13 @@
     </Simulator>
   </Simulators>
   <Runs Version="1" Minor="15">
-    <Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7z020clg400-1" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/synth_1" IncludeInArchive="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_1">
+    <Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7z020clg400-1" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="false" WriteIncrSynthDcp="false" State="current" IncludeInArchive="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_1">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2020">
           <Desc>Vivado Synthesis Defaults</Desc>
         </StratHandle>
         <Step Id="synth_design"/>
       </Strategy>
-      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
       <ReportStrategy Name="Vivado Synthesis Default Reports" Flow="Vivado Synthesis 2020"/>
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>

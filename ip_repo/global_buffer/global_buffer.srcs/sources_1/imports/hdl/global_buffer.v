@@ -17,16 +17,16 @@ module global_buffer (
 
   // A port
   input clk_a_i,
-  input wea_a_i,  // Write enable A
-  input ena_a_i,  // Enable A
+  input we_a_i,  // Write enable A
+  input en_a_i,  // Enable A
   input      [`ADDR_WIDTH-1:0] addr_a_i,
   input      [`WORD_WIDTH-1:0] wdata_a_i,
   output reg [`WORD_WIDTH-1:0] rdata_a_o,
 
   // B port
   input clk_b_i,
-  input wea_b_i,  // Write enable B
-  input ena_b_i,  // Enable B
+  input we_b_i,  // Write enable B
+  input en_b_i,  // Enable B
   input      [`ADDR_WIDTH-1:0] addr_b_i,
   input      [`WORD_WIDTH-1:0] wdata_b_i,
   output reg [`WORD_WIDTH-1:0] rdata_b_o
@@ -39,8 +39,8 @@ module global_buffer (
   
   // A port
   always @(posedge clk_a_i) begin
-    if (ena_a_i) begin
-      if (wea_a_i) begin
+    if (en_a_i) begin
+      if (we_a_i) begin
         gbuff[addr_a_i] <= wdata_a_i;
         rdata_a_o       <= wdata_a_i;
       end else begin
@@ -51,8 +51,8 @@ module global_buffer (
 
   //B port
   always @(posedge clk_b_i) begin
-    if (ena_b_i) begin
-      if (wea_b_i) begin
+    if (en_b_i) begin
+      if (we_b_i) begin
         gbuff[addr_b_i] <= wdata_b_i;
         rdata_b_o       <= wdata_b_i;
       end else begin
