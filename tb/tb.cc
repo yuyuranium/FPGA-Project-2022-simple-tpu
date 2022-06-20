@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   top->trace(tfp, 5);
   tfp->open("top.vcd");
 
-  const int m = 8, k = 32, n = 8;
+  const int m = 17, k = 8, n = 17;
   vector<vector<short> > matrix_a(m);
   vector<vector<short> > matrix_b(k);
   vector<vector<short> > matrix_p(m);
