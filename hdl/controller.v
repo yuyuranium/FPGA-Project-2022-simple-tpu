@@ -104,11 +104,14 @@ module controller (
   wire [3:0] batch_n = !col_batch_end ? 4'h8 :
                        ~|rem_n ? 4'h8 : rem_n;  // if rem_n == 0 then 8
 
+  // PE control signals
+  reg  pe_clr_q, ensys_q;
+
   // Assign output signals
   assign valid_o  = state_q == `DONE;
   assign pe_we_o  = batch_cycle_q == (k_i - 'd1);  // Last data is sent
-  assign pe_clr_o = ~|batch_cycle_q;               // New batch data is sent
-  assign ensys_o  = rd_en;
+  assign pe_clr_o = pe_clr_q;               // New batch data is sent
+  assign ensys_o  = ensys_q;
   assign bubble_o = batch_cycle_q > (k_i - 1);     // Insert bubbles when > k
 
   // Global buffer interfaces
@@ -156,6 +159,17 @@ module controller (
       wordp_sel_o = lat_cnt_q[2:0];
     end else begin
       wordp_sel_o = 'o0;
+    end
+  end
+
+  // PE control signals
+  always @(posedge clk_i or negedge rst_ni) begin
+    if (!rst_ni) begin
+      pe_clr_q <= 1'b0;
+      ensys_q  <= 1'b0;
+    end else begin
+      pe_clr_q <= ~|batch_cycle_q;
+      ensys_q  <= state_q == `BUSY;
     end
   end
 
