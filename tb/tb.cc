@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   top->trace(tfp, 5);
   tfp->open("top.vcd");
 
-  const int m = 10, k = 8, n = 10;
+  const int m = 8, k = 8, n = 8;
   vector<vector<short> > matrix_a(m);
   vector<vector<short> > matrix_b(k);
   vector<vector<short> > matrix_p(m);
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < m; ++i) {
     matrix_a[i] = vector<short>(k);
     for (int j = 0; j < k; ++j) {
-      matrix_a[i][j] = rand() & 0xff;  // 0 ~ 15 for testing
+      matrix_a[i][j] = rand() & 0xffff;
       cout << setw(4) << matrix_a[i][j];
     }
     cout << endl;
@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < k; ++i) {
     matrix_b[i] = vector<short>(n);
     for (int j = 0; j < n; ++j) {
-      matrix_b[i][j] = rand() & 0xff;  // 0 ~ 15 for testing
+      matrix_b[i][j] = rand() & 0xffff;
       cout << setw(4) << matrix_b[i][j];
     }
     cout << endl;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   mema.flush();
   mema.close();
 
-  // Write matrix A to mema.txt
+  // Write matrix B to mema.txt
   ofstream memb("tb/memb.mem");
   for (int j = 0; j < n; j += 8) {
     for (int i = 0; i < k; ++i) {
