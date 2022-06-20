@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
   top->trace(tfp, 5);
   tfp->open("top.vcd");
 
-  const int m = 17, k = 8, n = 17;
+  const int m = 17, k = 32, n = 17;
   vector<vector<short> > matrix_a(m);
   vector<vector<short> > matrix_b(k);
   vector<vector<short> > matrix_p(m);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
   memb.close();
 
   int posedge_cnt = 0;
-  while (!contextp->gotFinish() && posedge_cnt < 200) {
+  while (!contextp->gotFinish()) {
     top->rst_ni = 1;
     if (contextp->time() >= 1 && contextp->time() < 5) {
       top->rst_ni = 0;
@@ -168,14 +168,16 @@ int main(int argc, char *argv[])
         break;
       default:
         top->we_i = 0;
-        top->addr_i = 0;
-        top->wdata_i = 0;
+        top->addr_i = 1;
+        if (top->rdata_o == 1)
+          goto FINISH;
       }
     }
 
     tfp->dump(contextp->time());
     contextp->timeInc(1);
   }
+FINISH:
 
   top->final();
   tfp->flush();

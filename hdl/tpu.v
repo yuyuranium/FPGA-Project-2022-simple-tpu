@@ -42,7 +42,6 @@ module tpu (
   // Internal controller control signals
   wire       pe_clr, pe_we, ensys, bubble;
   wire [2:0] wordp_sel;
-  wire [7:0] datap_we;
 
   // Wires connecting each pe array
   wire pe_clr_q1, pe_clr_q2, pe_clr_q3, pe_clr_q4,
@@ -57,37 +56,19 @@ module tpu (
   wire [`WORD_WIDTH-1:0] wordp0, wordp1, wordp2, wordp3,
                          wordp4, wordp5, wordp6, wordp7;
 
-  // Assign output signals
-  reg [`WORD_WIDTH-1:0] wordp;
-
   always @(*) begin
     if (wep_o) begin
       case (wordp_sel)
-        3'o0: wordp = wordp0;
-        3'o1: wordp = wordp1;
-        3'o2: wordp = wordp2;
-        3'o3: wordp = wordp3;
-        3'o4: wordp = wordp4;
-        3'o5: wordp = wordp5;
-        3'o6: wordp = wordp6;
-        3'o7: wordp = wordp7;
-        default: wordp = 'd0;
+        3'o0: wordp_o = wordp0;
+        3'o1: wordp_o = wordp1;
+        3'o2: wordp_o = wordp2;
+        3'o3: wordp_o = wordp3;
+        3'o4: wordp_o = wordp4;
+        3'o5: wordp_o = wordp5;
+        3'o6: wordp_o = wordp6;
+        3'o7: wordp_o = wordp7;
+        default: wordp_o = 'd0;
       endcase
-    end else begin
-      wordp = 'd0;
-    end
-  end
-
-  always @(*) begin
-    if (wep_o) begin
-      wordp_o[`DATA0] = datap_we[0] ? wordp[`DATA0] : 'd0;
-      wordp_o[`DATA1] = datap_we[1] ? wordp[`DATA1] : 'd0;
-      wordp_o[`DATA2] = datap_we[2] ? wordp[`DATA2] : 'd0;
-      wordp_o[`DATA3] = datap_we[3] ? wordp[`DATA3] : 'd0;
-      wordp_o[`DATA4] = datap_we[4] ? wordp[`DATA4] : 'd0;
-      wordp_o[`DATA5] = datap_we[5] ? wordp[`DATA5] : 'd0;
-      wordp_o[`DATA6] = datap_we[6] ? wordp[`DATA6] : 'd0;
-      wordp_o[`DATA7] = datap_we[7] ? wordp[`DATA7] : 'd0;
     end else begin
       wordp_o = 'd0;
     end
@@ -129,8 +110,7 @@ module tpu (
     .wep_o       (wep_o),
     .addrp_o     (addrp_o),
 
-    .wordp_sel_o (wordp_sel),
-    .datap_we_o  (datap_we)
+    .wordp_sel_o (wordp_sel)
   );
 
   systolic_input_setup srca_setup (
