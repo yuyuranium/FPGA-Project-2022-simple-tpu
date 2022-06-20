@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2020.2 (64-bit)
+# SW Build 3064766 on Wed Nov 18 09:12:45 MST 2020
+# IP Build 3064653 on Wed Nov 18 14:17:31 MST 2020
+# Start of session at: Mon Jun 20 15:44:42 2022
+# Process ID: 16412
+# Current directory: C:/Users/user/Desktop/FPGA/term_project/FPGA-Project-2022-simple-tpu/global_buffer/global_buffer.runs/synth_1
+# Command line: vivado.exe -log global_buffer.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source global_buffer.tcl
+# Log file: C:/Users/user/Desktop/FPGA/term_project/FPGA-Project-2022-simple-tpu/global_buffer/global_buffer.runs/synth_1/global_buffer.vds
+# Journal file: C:/Users/user/Desktop/FPGA/term_project/FPGA-Project-2022-simple-tpu/global_buffer/global_buffer.runs/synth_1\vivado.jou
+#-----------------------------------------------------------
+source global_buffer.tcl -notrace

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenRun Id="synth_1" LaunchPart="xc7z020clg400-1" LaunchTime="1655711078">
+  <File Type="PA-TCL" Name="global_buffer.tcl"/>
+  <File Type="RDS-PROPCONSTRS" Name="global_buffer_drc_synth.rpt"/>
+  <File Type="REPORTS-TCL" Name="global_buffer_reports.tcl"/>
+  <File Type="RDS-RDS" Name="global_buffer.vds"/>
+  <File Type="RDS-UTIL" Name="global_buffer_utilization_synth.rpt"/>
+  <File Type="RDS-UTIL-PB" Name="global_buffer_utilization_synth.pb"/>
+  <File Type="RDS-DCP" Name="global_buffer.dcp"/>
+  <File Type="VDS-TIMINGSUMMARY" Name="global_buffer_timing_summary_synth.rpt"/>
+  <File Type="VDS-TIMING-PB" Name="global_buffer_timing_summary_synth.pb"/>
+  <FileSet Name="sources" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1" RelGenDir="$PGENDIR/sources_1">
+    <Filter Type="Srcs"/>
+    <File Path="$PSRCDIR/sources_1/imports/hdl/def.v">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="$PPRDIR/../hdl/def.v"/>
+        <Attr Name="ImportTime" Val="1655710941"/>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PSRCDIR/sources_1/imports/hdl/global_buffer.v">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="$PPRDIR/../hdl/global_buffer.v"/>
+        <Attr Name="ImportTime" Val="1655709561"/>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PSRCDIR/sources_1/imports/component.xml">
+      <FileInfo SFType="IPXACT"/>
+    </File>
+    <Config>
+      <Option Name="DesignMode" Val="RTL"/>
+      <Option Name="TopModule" Val="global_buffer"/>
+      <Option Name="TopAutoSet" Val="TRUE"/>
+    </Config>
+  </FileSet>
+  <FileSet Name="constrs_in" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1">
+    <Filter Type="Constrs"/>
+    <Config>
+      <Option Name="ConstrsType" Val="XDC"/>
+    </Config>
+  </FileSet>
+  <FileSet Name="utils" Type="Utils" RelSrcDir="$PSRCDIR/utils_1">
+    <Filter Type="Utils"/>
+    <Config>
+      <Option Name="TopAutoSet" Val="TRUE"/>
+    </Config>
+  </FileSet>
+  <Strategy Version="1" Minor="2">
+    <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2020">
+      <Desc>Vivado Synthesis Defaults</Desc>
+    </StratHandle>
+    <Step Id="synth_design"/>
+  </Strategy>
+</GenRun>
