@@ -43,19 +43,28 @@ module pe_array(
   wire [`WORD_WIDTH-1:0] wordp_d;
 
   // Write enable shift registers
-  reg  [8+`OUTPUT_LAT-1:0] we_q;
-  wire [8+`OUTPUT_LAT-1:0] we_d = { we_q[8+`OUTPUT_LAT-2:0], we_i };  // << 1
+  reg  [8+`OUTPUT_LAT-1:0] we_shift_reg_q;
+
+  // Data write enable
+  wire we0 = we_shift_reg_q[`OUTPUT_LAT+0];
+  wire we1 = we_shift_reg_q[`OUTPUT_LAT+1];
+  wire we2 = we_shift_reg_q[`OUTPUT_LAT+2];
+  wire we3 = we_shift_reg_q[`OUTPUT_LAT+3];
+  wire we4 = we_shift_reg_q[`OUTPUT_LAT+4];
+  wire we5 = we_shift_reg_q[`OUTPUT_LAT+5];
+  wire we6 = we_shift_reg_q[`OUTPUT_LAT+6];
+  wire we7 = we_shift_reg_q[`OUTPUT_LAT+7];
 
   // Assign output signals
-  assign clr_o   = clr_q1;   // 1 cycle delay
-  assign we_o    = we_q[1];  // 1 cycle delay
-  assign wordp_o = wordp_q;  // 1 cycle delay
+  assign clr_o   = clr_q1;             // 1 cycle delay
+  assign we_o    = we_shift_reg_q[0];  // 1 cycle delay
+  assign wordp_o = wordp_q;            // 1 cycle delay
 
   always @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
-      we_q <= 'd0;
+      we_shift_reg_q <= 'd0;
     end else begin
-      we_q <= we_d;
+      we_shift_reg_q <= { we_shift_reg_q[8+`OUTPUT_LAT-2:0], we_i };  // << 1 
     end
   end
 
@@ -64,14 +73,14 @@ module pe_array(
     if (!rst_ni) begin
       wordp_q <= 'd0;
     end else begin
-      if (we_q[`OUTPUT_LAT])   wordp_q[`DATA0] <= wordp_d[`DATA0];
-      if (we_q[`OUTPUT_LAT+1]) wordp_q[`DATA1] <= wordp_d[`DATA1];
-      if (we_q[`OUTPUT_LAT+2]) wordp_q[`DATA2] <= wordp_d[`DATA2];
-      if (we_q[`OUTPUT_LAT+3]) wordp_q[`DATA3] <= wordp_d[`DATA3];
-      if (we_q[`OUTPUT_LAT+4]) wordp_q[`DATA4] <= wordp_d[`DATA4];
-      if (we_q[`OUTPUT_LAT+5]) wordp_q[`DATA5] <= wordp_d[`DATA5];
-      if (we_q[`OUTPUT_LAT+6]) wordp_q[`DATA6] <= wordp_d[`DATA6];
-      if (we_q[`OUTPUT_LAT+7]) wordp_q[`DATA7] <= wordp_d[`DATA7];
+      if (we0) wordp_q[`DATA0] <= wordp_d[`DATA0];
+      if (we1) wordp_q[`DATA1] <= wordp_d[`DATA1];
+      if (we2) wordp_q[`DATA2] <= wordp_d[`DATA2];
+      if (we3) wordp_q[`DATA3] <= wordp_d[`DATA3];
+      if (we4) wordp_q[`DATA4] <= wordp_d[`DATA4];
+      if (we5) wordp_q[`DATA5] <= wordp_d[`DATA5];
+      if (we6) wordp_q[`DATA6] <= wordp_d[`DATA6];
+      if (we7) wordp_q[`DATA7] <= wordp_d[`DATA7];
     end
   end
 
