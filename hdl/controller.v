@@ -76,8 +76,8 @@ module controller (
   wire wr_en = wr_state_q == `BUSY;
 
   // Base source addresses
-  wire [`ADDR_WIDTH-1:0] batch_base_addra = row_batch_q * k_i + base_addra_i;
-  wire [`ADDR_WIDTH-1:0] batch_base_addrb = col_batch_q * k_i + base_addrb_i;
+  wire [`ADDR_WIDTH-1:0] batch_base_addra = ((row_batch_q * k_i) << 4) + base_addra_i;
+  wire [`ADDR_WIDTH-1:0] batch_base_addrb = ((col_batch_q * k_i) << 4) + base_addrb_i;
 
   // Source address generator
   reg  [1:0] rd_state_q, rd_state_d;
@@ -118,15 +118,15 @@ module controller (
   // Global buffer interfaces
   assign ena_o   = rd_en;    // Enable when read enable
   assign wea_o   = 1'b0;     // Always read
-  assign addra_o = rd_en ? batch_base_addra + batch_cycle_q : 'd0;
+  assign addra_o = rd_en ? batch_base_addra + (batch_cycle_q << 4) : 'd0;
 
   assign enb_o   = rd_en;    // Enable when read enable
   assign web_o   = 1'b0;     // Always read
-  assign addrb_o = rd_en ? batch_base_addrb + batch_cycle_q : 'd0;
+  assign addrb_o = rd_en ? batch_base_addrb + (batch_cycle_q << 4) : 'd0;
 
   assign enp_o   = wr_en;    // Enable when write enable
   assign wep_o   = wr_en;    // Write enable when write enable
-  assign addrp_o = wr_en ? base_addrp_i + addrp_q : 'd0;
+  assign addrp_o = wr_en ? base_addrp_i + addrp_q << 4 : 'd0;
 
   // Word P select signal
   assign wordp_sel_o = wr_en ? col_lat_cnt_q : 'o0;
